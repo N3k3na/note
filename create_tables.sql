@@ -16,7 +16,7 @@ CREATE TABLE matiere (
 CREATE TABLE feuille (
     id SERIAL PRIMARY KEY,
     idcandidat INTEGER NOT NULL,
-    idfeuille INTEGER NOT NULL,
+    idmatiere INTEGER NOT NULL,
     FOREIGN KEY (idcandidat) REFERENCES candidat(id)
 );
 
@@ -42,24 +42,12 @@ CREATE TABLE resolution (
     a_prendre VARCHAR(20) NOT NULL
 );
 
--- Insertion des valeurs pour resolution
-INSERT INTO resolution (a_prendre) VALUES 
-    ('maximum'),
-    ('moyenne'),
-    ('minimum');
 
 -- Table comparateur
 CREATE TABLE comparateur (
     id SERIAL PRIMARY KEY,
     comparateur VARCHAR(10) NOT NULL
 );
-
--- Insertion des valeurs pour comparateur
-INSERT INTO comparateur (comparateur) VALUES 
-    ('sup'),
-    ('inf'),
-    ('supEgal'),
-    ('infEgal');
 
 -- Table parametre
 CREATE TABLE parametre (

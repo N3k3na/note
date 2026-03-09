@@ -18,8 +18,13 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
            "(SELECT f.id FROM Feuille f WHERE f.idCandidat = :idCandidat)")
     List<Note> findByIdCandidat(@Param("idCandidat") Long idCandidat);
     
-    @Query("SELECT n FROM Note n WHERE n.idFeuille = :idFeuille")
-    List<Note> findNotesByFeuilleId(@Param("idFeuille") Long idFeuille);
+    @Query("SELECT n FROM Note n WHERE n.idFeuille IN " +
+           "(SELECT f.id FROM Feuille f WHERE f.idMatiere = :idMatiere)")
+    List<Note> findByIdMatiere(@Param("idMatiere") Long idMatiere);
+    
+    @Query("SELECT n FROM Note n WHERE n.idFeuille IN " +
+           "(SELECT f.id FROM Feuille f WHERE f.idCandidat = :idCandidat AND f.idMatiere = :idMatiere)")
+    List<Note> findByIdCandidatAndIdMatiere(@Param("idCandidat") Long idCandidat, @Param("idMatiere") Long idMatiere);
     
     boolean existsByIdFeuilleAndIdProf(Long idFeuille, Long idProf);
 }

@@ -18,9 +18,6 @@ public class NoteController {
     @Autowired
     private NoteService noteService;
 
-    /**
-     * Page d'accueil du module notes
-     */
     @GetMapping("")
     public ModelAndView index() {
         ModelAndView modelAndView = new ModelAndView("notes/index");
@@ -29,9 +26,6 @@ public class NoteController {
         return modelAndView;
     }
 
-    /**
-     * Page pour insérer une note
-     */
     @GetMapping("/inserer")
     public ModelAndView showInsertForm() {
         List<Candidat> candidats = noteService.getAllCandidats();
@@ -39,7 +33,6 @@ public class NoteController {
         List<Prof> profs = noteService.getAllProfs();
         
         ModelAndView modelAndView = new ModelAndView("notes/inserer");
-        modelAndView.addObject("note", new Note());
         modelAndView.addObject("candidats", candidats);
         modelAndView.addObject("matieres", matieres);
         modelAndView.addObject("profs", profs);
@@ -47,32 +40,23 @@ public class NoteController {
         return modelAndView;
     }
     
-    /**
-     * Traiter l'insertion d'une note
-     */
     @PostMapping("/inserer")
     public ModelAndView insertNote(@RequestParam("idCandidat") Long idCandidat,
                                   @RequestParam("idMatiere") Long idMatiere,
                                   @RequestParam("idProf") Long idProf,
                                   @RequestParam("note") BigDecimal noteValue,
-                                  @RequestParam("idFeuille") Long idFeuille,
                                   RedirectAttributes redirectAttributes) {
         
-        // Créer et sauvegarder la note
-        Note note = new Note(idFeuille, idProf, noteValue);
-        // Note: Vous devrez peut-être ajuster la logique pour lier la matière à la feuille
-        
-        noteService.saveNote(note);
-        
-        redirectAttributes.addFlashAttribute("successMessage", 
-            "Note insérée avec succès !");
+        try {
+            noteService.saveNote(idCandidat, idMatiere, idProf, noteValue);
+            redirectAttributes.addFlashAttribute("successMessage", "Note insérée avec succès !");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
         
         return new ModelAndView("redirect:/notes/inserer");
     }
     
-    /**
-     * Page pour consulter la note réelle d'un candidat
-     */
     @GetMapping("/consulter")
     public ModelAndView showConsultForm() {
         List<Candidat> candidats = noteService.getAllCandidats();
@@ -85,9 +69,6 @@ public class NoteController {
         return modelAndView;
     }
     
-    /**
-     * Traiter la consultation de la note réelle
-     */
     @PostMapping("/consulter")
     public ModelAndView consulterNote(@RequestParam("idCandidat") Long idCandidat,
                                      @RequestParam("idMatiere") Long idMatiere,
@@ -113,9 +94,6 @@ public class NoteController {
         return new ModelAndView("redirect:/notes/resultat");
     }
     
-    /**
-     * Page de résultat de la note réelle
-     */
     @GetMapping("/resultat")
     public ModelAndView showResultat() {
         ModelAndView modelAndView = new ModelAndView("notes/resultat");
