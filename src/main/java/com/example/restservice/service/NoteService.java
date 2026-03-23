@@ -139,42 +139,75 @@ public class NoteService {
     private BigDecimal appliquerRegle(List<BigDecimal> notes, BigDecimal difference, 
                                        List<Parametre> parametres) {
         
+        if (parametres.isEmpty()) {
+            return calculerMoyenne(notes);
+        }
+        
+        // Rechercher un paramètre qui correspond exactement à la différence
         for (Parametre param : parametres) {
             Comparateur comparateur = param.getComparateur();
             BigDecimal valeurSeuil = param.getValeur();
-            Resolution resolution = param.getResolution();
             
-            boolean conditionRemplie = false;
-            
-            switch (comparateur.getComparateur()) {
-                case "inf":
-                    conditionRemplie = difference.compareTo(valeurSeuil) < 0;
-                    break;
-                case "infEgal":
-                    conditionRemplie = difference.compareTo(valeurSeuil) <= 0;
-                    break;
-                case "sup":
-                    conditionRemplie = difference.compareTo(valeurSeuil) > 0;
-                    break;
-                case "supEgal":
-                    conditionRemplie = difference.compareTo(valeurSeuil) >= 0;
-                    break;
+            if (comparateur.getComparateur().equals("egal") && 
+                difference.compareTo(valeurSeuil) == 0) {
+                return appliquerResolution(notes, param.getResolution());
             }
-            
-            if (conditionRemplie) {
-                switch (resolution.getAPrendre()) {
-                    case "maximum":
-                        return notes.stream().max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
-                    case "minimum":
-                        return notes.stream().min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
-                    case "moyenne":
-                        return calculerMoyenne(notes);
-                }
-            }
+        }
+        
+        // Si aucun paramètre ne correspond exactement, trouver le plus proche
+        Parametre parametreLePlusProche = trouverParametreLePlusProche(difference, parametres);
+        
+        if (parametreLePlusProche != null) {
+            return appliquerResolution(notes, parametreLePlusProche.getResolution());
         }
         
         // Par défaut, retourner la moyenne
         return calculerMoyenne(notes);
+    }
+    
+    // Trouver le paramètre le plus proche de la différence donnée
+    private Parametre trouverParametreLePlusProche(BigDecimal difference, List<Parametre> parametres) {
+        if (parametres.isEmpty()) {
+            return null;
+        }
+        
+        Parametre parametreChoisi = null;
+        BigDecimal ecartMinimal = null;
+        
+        for (Parametre param : parametres) {
+            BigDecimal valeurSeuil = param.getValeur();
+            BigDecimal ecart = difference.subtract(valeurSeuil).abs();
+            
+            // Si la différence est exactement au milieu entre deux valeurs
+            // On prend la plus petite valeur (déjà géré par l'ordre de parcours)
+            
+            if (ecartMinimal == null || ecart.compareTo(ecartMinimal) < 0) {
+                ecartMinimal = ecart;
+                parametreChoisi = param;
+            } else if (ecart.compareTo(ecartMinimal) == 0) {
+                // En cas d'égalité d'écart (ex: différence = 6.5 avec valeurs 6 et 7)
+                // On prend la plus petite valeur
+                if (param.getValeur().compareTo(parametreChoisi.getValeur()) < 0) {
+                    parametreChoisi = param;
+                }
+            }
+        }
+        
+        return parametreChoisi;
+    }
+    
+    // Appliquer la résolution (maximum, minimum, moyenne) sur les notes
+    private BigDecimal appliquerResolution(List<BigDecimal> notes, Resolution resolution) {
+        switch (resolution.getAPrendre()) {
+            case "maximum":
+                return notes.stream().max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+            case "minimum":
+                return notes.stream().min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+            case "moyenne":
+                return calculerMoyenne(notes);
+            default:
+                return calculerMoyenne(notes);
+        }
     }
     
     // Calculer la moyenne des notes
