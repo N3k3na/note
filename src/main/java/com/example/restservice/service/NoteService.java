@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class NoteService {
@@ -54,50 +55,50 @@ public class NoteService {
     
     // Sauvegarder une note
     @Transactional
-    public Note saveNote(Note note) {
-        // Vérifier si la feuille existe, sinon la créer
-        Feuille feuille = feuilleRepository.findByIdCandidatAndIdFeuille(
-            note.getIdFeuille().longValue(), // Note: idFeuille dans Note correspond à l'ID de la feuille
-            note.getIdFeuille() // À adapter selon votre logique métier
-        );
+    public Note saveNote(Long idCandidat, Long idMatiere, Long idProf, BigDecimal noteValue) {
         
-        if (feuille == null) {
-            feuille = new Feuille(
-                note.getIdFeuille(), // À adapter : ceci devrait être l'ID du candidat
-                note.getIdFeuille()   // Ceci devrait être l'ID de la feuille
-            );
+        // Vérifier si une feuille existe déjà pour ce candidat et cette matière
+        Optional<Feuille> feuilleOpt = feuilleRepository.findByIdCandidatAndIdMatiere(idCandidat, idMatiere);
+        
+        Feuille feuille;
+        if (feuilleOpt.isPresent()) {
+            feuille = feuilleOpt.get();
+        } else {
+            // Créer une nouvelle feuille
+            feuille = new Feuille(idCandidat, idMatiere);
             feuille = feuilleRepository.save(feuille);
         }
         
+        // Vérifier si ce professeur a déjà noté cette feuille
+        if (noteRepository.existsByIdFeuilleAndIdProf(feuille.getId(), idProf)) {
+            throw new RuntimeException("Ce professeur a déjà noté cette feuille");
+        }
+        
+        // Créer et sauvegarder la note
+        Note note = new Note(feuille.getId(), idProf, noteValue);
         return noteRepository.save(note);
     }
     
     // Calculer la note réelle d'un candidat pour une matière
     public BigDecimal calculerNoteReelle(Long idCandidat, Long idMatiere) {
-        // Récupérer toutes les feuilles du candidat
-        List<Feuille> feuilles = feuilleRepository.findByIdCandidat(idCandidat);
         
-        if (feuilles.isEmpty()) {
-            return BigDecimal.ZERO;
-        }
-        
-        // Récupérer toutes les notes pour ces feuilles
-        List<BigDecimal> notes = new ArrayList<>();
-        for (Feuille feuille : feuilles) {
-            List<Note> notesFeuille = noteRepository.findNotesByFeuilleId(feuille.getId());
-            for (Note note : notesFeuille) {
-                notes.add(note.getNote());
-            }
-        }
+        // Récupérer toutes les notes du candidat pour cette matière
+        List<Note> notes = noteRepository.findByIdCandidatAndIdMatiere(idCandidat, idMatiere);
         
         if (notes.isEmpty()) {
             return BigDecimal.ZERO;
         }
         
+        // Extraire les valeurs des notes
+        List<BigDecimal> valeursNotes = new ArrayList<>();
+        for (Note note : notes) {
+            valeursNotes.add(note.getNote());
+        }
+        
         // Vérifier si toutes les notes sont identiques
         boolean allNotesIdentiques = true;
-        BigDecimal premiereNote = notes.get(0);
-        for (BigDecimal note : notes) {
+        BigDecimal premiereNote = valeursNotes.get(0);
+        for (BigDecimal note : valeursNotes) {
             if (note.compareTo(premiereNote) != 0) {
                 allNotesIdentiques = false;
                 break;
@@ -109,13 +110,13 @@ public class NoteService {
         }
         
         // Calculer la différence selon la formule donnée
-        BigDecimal difference = calculerDifference(notes);
+        BigDecimal difference = calculerDifference(valeursNotes);
         
         // Récupérer les paramètres pour cette matière
         List<Parametre> parametres = parametreRepository.findByIdMatiereOrderByValeurAsc(idMatiere);
         
         // Déterminer quelle note prendre selon les paramètres
-        return appliquerRegle(notes, difference, parametres);
+        return appliquerRegle(valeursNotes, difference, parametres);
     }
     
     // Calculer la différence entre les notes
@@ -180,10 +181,5 @@ public class NoteService {
     private BigDecimal calculerMoyenne(List<BigDecimal> notes) {
         BigDecimal somme = notes.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
         return somme.divide(BigDecimal.valueOf(notes.size()), 2, RoundingMode.HALF_UP);
-    }
-    
-    // Vérifier si une note existe déjà
-    public boolean noteExists(Long idFeuille, Long idProf) {
-        return noteRepository.existsByIdFeuilleAndIdProf(idFeuille, idProf);
     }
 }

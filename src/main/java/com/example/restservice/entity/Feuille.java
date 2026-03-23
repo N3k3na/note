@@ -1,7 +1,16 @@
 package com.example.restservice.entity;
 
-import jakarta.persistence.*;
 import java.util.List;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "feuille")
@@ -14,21 +23,25 @@ public class Feuille {
     @Column(name = "idcandidat", nullable = false)
     private Long idCandidat;
     
-    @Column(name = "idfeuille", nullable = false)
-    private Long idFeuille;
+    @Column(name = "idmatiere", nullable = false)
+    private Long idMatiere;
     
     @ManyToOne
     @JoinColumn(name = "idcandidat", insertable = false, updatable = false)
     private Candidat candidat;
+    
+    @ManyToOne
+    @JoinColumn(name = "idmatiere", insertable = false, updatable = false)
+    private Matiere matiere;
     
     @OneToMany(mappedBy = "feuille")
     private List<Note> notes;
     
     public Feuille() {}
     
-    public Feuille(Long idCandidat, Long idFeuille) {
+    public Feuille(Long idCandidat, Long idMatiere) {
         this.idCandidat = idCandidat;
-        this.idFeuille = idFeuille;
+        this.idMatiere = idMatiere;
     }
     
     public Long getId() {
@@ -47,12 +60,12 @@ public class Feuille {
         this.idCandidat = idCandidat;
     }
     
-    public Long getIdFeuille() {
-        return idFeuille;
+    public Long getIdMatiere() {
+        return idMatiere;
     }
     
-    public void setIdFeuille(Long idFeuille) {
-        this.idFeuille = idFeuille;
+    public void setIdMatiere(Long idMatiere) {
+        this.idMatiere = idMatiere;
     }
     
     public Candidat getCandidat() {
@@ -61,6 +74,14 @@ public class Feuille {
     
     public void setCandidat(Candidat candidat) {
         this.candidat = candidat;
+    }
+    
+    public Matiere getMatiere() {
+        return matiere;
+    }
+    
+    public void setMatiere(Matiere matiere) {
+        this.matiere = matiere;
     }
     
     public List<Note> getNotes() {

@@ -77,6 +77,13 @@
             border-radius: 4px;
             margin-bottom: 20px;
         }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -87,6 +94,10 @@
         
         <c:if test="${not empty successMessage}">
             <div class="alert-success">${successMessage}</div>
+        </c:if>
+        
+        <c:if test="${not empty errorMessage}">
+            <div class="alert-error">${errorMessage}</div>
         </c:if>
         
         <div class="form-container">
@@ -119,11 +130,6 @@
                             <option value="${prof.id}">${prof.nom}</option>
                         </c:forEach>
                     </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="idFeuille">Numéro de Feuille *</label>
-                    <input type="number" id="idFeuille" name="idFeuille" required min="1" step="1">
                 </div>
                 
                 <div class="form-group">
